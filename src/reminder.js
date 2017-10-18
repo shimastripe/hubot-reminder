@@ -73,8 +73,16 @@ module.exports = robot => {
     }, null, true, TZ);
   });
 
-  robot.hear(/reminder$/, (res) => {
+  robot.hear(/^reminder$/, (res) => {
     reminderToSlack();
+  });
+
+  robot.hear(/^checkreminder$/, (res) => {
+    console.log(robot.brain.get('REMINDER_CHANNEL'));
+  });
+
+  robot.hear(/^resetreminder$/, (res) => {
+    console.log(robot.brain.get('REMINDER_CHANNEL'));
   });
 
   let reminderToSlack = async() => {
