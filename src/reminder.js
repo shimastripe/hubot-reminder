@@ -118,11 +118,11 @@ module.exports = robot => {
     }
 
     robot.logger.debug("/reminder-toggle");
+    let payload = req.body;
     let old = monitorList[payload.channel_id];
     if (_.isUndefined(old)) {
       old = false;
     }
-    let payload = req.body;
 
     monitorList[payload.channel_id] = !old;
     robot.brain.set('MONITOR_SWITCH_CHANNEL', monitorList);
