@@ -90,7 +90,7 @@ module.exports = robot => {
         mrkdwn_in: ["pretext", "text", "fields"]
       }
 
-      if (_.isEmpty(fields)) {
+      if (!_.isEmpty(fields)) {
         _.forEach(monitorList, (v, k) => {
           if (v) {
             robot.messageRoom(k, {
