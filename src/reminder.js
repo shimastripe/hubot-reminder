@@ -122,6 +122,7 @@ module.exports = robot => {
     if (_.isUndefined(old)) {
       old = false;
     }
+    let payload = req.body;
 
     monitorList[payload.channel_id] = !old;
     robot.brain.set('MONITOR_SWITCH_CHANNEL', monitorList);
