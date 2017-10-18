@@ -125,7 +125,7 @@ module.exports = robot => {
     }
 
     monitorList[payload.channel_id] = !old;
-    robot.brain.set('MONITOR_SWITCH_CHANNEL', monitorList);
+    robot.brain.set('REMINDER_CHANNEL', monitorList);
     res.send('Update reminder status in this channel: ' + !old);
   });
 };
