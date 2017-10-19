@@ -22,14 +22,12 @@ const FLAG = 'REMINDER';
 let monitorList = {};
 
 let createFields = () => {
-  let jpTime = moment().utcOffset(9);
-  let checkTime = jpTime.add(1, 'days');
+  let today = moment().utcOffset(9).add(0, 'd');
+  let [todayM, todayD] = [today.month(), today.date()];
 
   return new Promise((resolve, reject) => {
     ical.fromURL(process.env.ICAL_URL, {}, (err, data) => {
       let fields = [];
-      let today = moment().utcOffset(9).add(1, 'd');
-      let [todayM, todayD] = [today.month(), today.date()];
 
       _.forEach(data, (v, k) => {
         let ev = v;
@@ -41,20 +39,45 @@ let createFields = () => {
         }
 
         if (_.includes(ev.description, FLAG)) {
-          let text = '*' + ev.summary + '*';
+          let eventName = ev.summary;
           let timeStr = startDate.format('kk:mm') + ' - ' + endDate.format('kk:mm');
 
-          let memo = _.split(_.split(ev.description, FLAG + "{")[1], "}")[0];
-          if (!_.isUndefined(memo)) {
-            text += "\n" + memo;
+          let eventField = {
+            title: "Event",
+            value: eventName,
+            short: false
+          };
+          fields.push(eventField);
+
+          let timeField = {
+            title: "Time",
+            value: timeStr,
+            short: true
+          };
+          fields.push(timeField);
+
+          let loc = ev.location;
+          if (loc === "") {
+            loc = 'NONE';
           }
 
-          let field = {
-            title: timeStr,
-            value: text,
+          let locField = {
+            title: "Location",
+            value: loc,
+            short: true
           };
+          fields.push(locField);
 
-          fields.push(field);
+          let detail = _.split(_.split(ev.description, FLAG + "{")[1], "}")[0];
+          if (!(_.isUndefined(detail) || detail === "")) {
+            let detailField = {
+              title: "Detail",
+              value: detail,
+              short: false
+            };
+
+            fields.push(detailField);
+          }
         }
       });
 
