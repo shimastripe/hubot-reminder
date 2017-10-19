@@ -22,7 +22,7 @@ const FLAG = 'REMINDER';
 let monitorList = {};
 
 let createFields = () => {
-  let today = moment().utcOffset(9).add(0, 'd');
+  let today = moment().utcOffset(9).add(1, 'd');
   let [todayM, todayD] = [today.month(), today.date()];
 
   return new Promise((resolve, reject) => {
