@@ -27,9 +27,34 @@ let createFields = () => {
 
   return new Promise((resolve, reject) => {
     ical.fromURL(process.env.ICAL_URL, {}, (err, data) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
       let fields = [];
 
-      _.forEach(data, (v, k) => {
+      let allData = _.flatMap(data, (n) => {
+        if (n.rrule) {
+          let startDate = moment(n.start);
+          let endDate = moment(n.end);
+          let interval = endDate - startDate;
+
+          return _.map(n.rrule.all(), (m) => {
+            return {
+              summary: n.summary,
+              description: n.description,
+              location: n.location,
+              start: moment(m).toDate(),
+              end: moment(m).add(interval).toDate()
+            };
+          });
+        } else {
+          return n;
+        }
+      });
+
+      _.forEach(allData, (v, k) => {
         let ev = v;
         let startDate = moment(ev.start);
         let endDate = moment(ev.end);
