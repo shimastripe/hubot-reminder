@@ -65,7 +65,11 @@ let createFields = () => {
 
         if (_.includes(ev.description, FLAG)) {
           let eventName = ev.summary;
+
           let timeStr = startDate.format('kk:mm') + ' - ' + endDate.format('kk:mm');
+          if (timeStr === "24:00 - 24:00") {
+            timeStr = '終日';
+          }
 
           let eventField = {
             title: "Event",
