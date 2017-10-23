@@ -117,10 +117,11 @@ let createFields = () => {
 
 module.exports = robot => {
   robot.brain.once('save', () => {
-    robot.logger.debug("DB init");
+    robot.logger.debug("Reminder DB init");
     monitorList = robot.brain.get('REMINDER_CHANNEL') || {};
 
     new CronJob('0 0 17 * * *', () => {
+      robot.logger.debug("ReminderToSlack");
       reminderToSlack();
     }, null, true, TZ);
   });
