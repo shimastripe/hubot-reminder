@@ -67,7 +67,7 @@ let filterTime = (datas) => {
 
 let toString = (datas) => {
   return _.reduce(datas, (sum, n) => {
-    return sum + n.day.format('MM/DD') + " " + n.name + "\n";
+    return sum + moment(n.day).utcOffset(9).format('MM/DD') + " " + n.name + "\n";
   }, "");
 };
 
