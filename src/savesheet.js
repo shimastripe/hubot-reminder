@@ -76,7 +76,7 @@ module.exports = robot => {
     let monitorList = robot.brain.get('REMINDER_CHANNEL') || {};
     let oldData = filterTime(robot.brain.get('SHEETSCHEDULE') || []);
 
-    new CronJob('* */1 * * * *', async() => {
+    new CronJob('* */30 * * * *', async() => {
       robot.logger.debug("Scrape spreadsheet");
       let data = await getResearchMeetingSchedule(oauth2Client);
       let parseData = filterTime(parseSheetData(data));
