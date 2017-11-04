@@ -55,9 +55,9 @@ let parseSheetData = (data) => {
 };
 
 let filterTime = (datas) => {
-  let now = moment();
+  let now = moment().utcOffset(9);
   return _.filter(datas, (d) => {
-    if (now < d.day) {
+    if (now < moment(d.day).utcOffset(9)) {
       return true;
     } else {
       return false;
@@ -76,7 +76,7 @@ module.exports = robot => {
     let monitorList = robot.brain.get('REMINDER_CHANNEL') || {};
     let oldData = filterTime(robot.brain.get('SHEETSCHEDULE') || []);
 
-    new CronJob('*/30 * * * * *', async() => {
+    new CronJob('* * */1 * * *', async() => {
       robot.logger.debug("Scrape spreadsheet");
       let data = await getResearchMeetingSchedule(oauth2Client);
       let parseData = filterTime(parseSheetData(data));
