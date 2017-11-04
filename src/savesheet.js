@@ -76,7 +76,7 @@ module.exports = robot => {
     let monitorList = robot.brain.get('REMINDER_CHANNEL') || {};
     let oldData = filterTime(robot.brain.get('SHEETSCHEDULE') || []);
 
-    new CronJob('* */30 * * * *', async() => {
+    new CronJob('* */1 * * * *', async() => {
       robot.logger.debug("Scrape spreadsheet");
       let data = await getResearchMeetingSchedule(oauth2Client);
       let parseData = filterTime(parseSheetData(data));
@@ -98,7 +98,7 @@ module.exports = robot => {
         });
 
         oldData = parseData;
-        robot.brain.set('REMINDER_CHANNEL', oldData);
+        robot.brain.set('SHEETSCHEDULE', oldData);
       }
     }, null, true, 'Asia/Tokyo');
   });
