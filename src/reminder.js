@@ -100,15 +100,14 @@ let createFields = () => {
           fields.push(locField);
 
           if (_.includes(ev.description, FLAG2)) {
-            console.log(today);
-            console.log(scheduleData);
             let data = _.filter(scheduleData, (item) => {
-              return item.day === today;
+              return today - moment(item.day) >= 0;
             });
 
             let detail = _.reduce(data, (sum, n) => {
               return sum + "@" + n.name + " ";
             }, "");
+
             let detailField = {
               title: "Detail",
               value: detail,
