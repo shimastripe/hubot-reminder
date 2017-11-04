@@ -47,7 +47,7 @@ let parseSheetData = (data) => {
   let convertData = _.map(validUserData, (n) => {
     return {
       name: n[3],
-      day: moment(_.split(n[0], '(')[0], "YYYY/MM/DD")
+      day: moment(_.split(n[0], '(')[0], "YYYY/MM/DD").utcOffset(9)
     }
   });
 
