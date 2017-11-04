@@ -18,11 +18,13 @@ const CronJob = require('cron').CronJob;
 const randomColor = require('randomcolor');
 const TZ = 'Asia/Tokyo';
 const FLAG = 'REMINDER';
+const FLAG2 = 'SPREADSHEET';
 
 let monitorList = {};
+let scheduleData = [];
 
 let createFields = () => {
-  let today = moment().utcOffset(9).add(1, 'd');
+  let today = moment().utcOffset(9).add(5, 'd');
   let [todayM, todayD] = [today.month(), today.date()];
 
   return new Promise((resolve, reject) => {
@@ -97,6 +99,25 @@ let createFields = () => {
           };
           fields.push(locField);
 
+          if (_.includes(ev.description, FLAG2)) {
+            console.log(today);
+            console.log(scheduleData);
+            let data = _.filter(scheduleData, (item) => {
+              return item.day === today;
+            });
+
+            let detail = _.reduce(data, (sum, n) => {
+              return sum + "@" + n.name + " ";
+            }, "");
+            let detailField = {
+              title: "Detail",
+              value: detail,
+              short: false
+            };
+
+            fields.push(detailField);
+          }
+
           let detail = _.split(_.split(ev.description, FLAG + "{")[1], "}")[0];
           if (!(_.isUndefined(detail) || detail === "")) {
             let detailField = {
@@ -119,6 +140,7 @@ module.exports = robot => {
   robot.brain.once('save', () => {
     robot.logger.debug("Reminder DB init");
     monitorList = robot.brain.get('REMINDER_CHANNEL') || {};
+    scheduleData = robot.brain.get('SHEETSCHEDULE') || [];
 
     new CronJob('0 0 17 * * *', () => {
       robot.logger.debug("ReminderToSlack");
