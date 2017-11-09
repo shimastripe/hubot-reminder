@@ -74,10 +74,10 @@ let toString = (datas) => {
 module.exports = robot => {
   robot.brain.once('save', () => {
     let monitorList = robot.brain.get('REMINDER_CHANNEL') || {};
-    let oldData = filterTime(robot.brain.get('SHEETSCHEDULE') || []);
 
     new CronJob('0 0 */1 * * *', async() => {
       robot.logger.debug("Scrape spreadsheet");
+      let oldData = filterTime(robot.brain.get('SHEETSCHEDULE') || []);
       let data = await getResearchMeetingSchedule(oauth2Client);
       let parseData = filterTime(parseSheetData(data));
 
@@ -97,8 +97,7 @@ module.exports = robot => {
           }
         });
 
-        oldData = parseData;
-        robot.brain.set('SHEETSCHEDULE', oldData);
+        robot.brain.set('SHEETSCHEDULE', parseData);
       }
     }, null, true, 'Asia/Tokyo');
   });
