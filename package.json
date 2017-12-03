@@ -18,7 +18,7 @@
     "googleapis": "^22.2.0",
     "ical": "^0.5.0",
     "lodash": "^4.17.4",
-    "moment": "^2.19.1",
+    "moment": "^2.19.3",
     "node-ical": "^0.5.4",
     "randomcolor": "^0.5.3"
   },
