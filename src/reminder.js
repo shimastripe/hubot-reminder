@@ -23,18 +23,13 @@ const FLAG2 = 'SPREADSHEET';
 let monitorList = {};
 let scheduleData = [];
 
-let createFields = () => {
-  let today = moment().utcOffset(9).add(1, 'd');
-  let [todayM, todayD] = [today.month(), today.date()];
-
+let getICALData = () => {
   return new Promise((resolve, reject) => {
     ical.fromURL(process.env.ICAL_URL, {}, (err, data) => {
       if (err) {
         reject(err);
         return;
       }
-
-      let fields = [];
 
       let allData = _.flatMap(data, (n) => {
         if (n.rrule) {
@@ -55,113 +50,98 @@ let createFields = () => {
           return n;
         }
       });
-
-      _.forEach(allData, (v, k) => {
-        let ev = v;
-        let startDate = moment(ev.start);
-        let endDate = moment(ev.end);
-
-        if (!(todayM === startDate.month() && todayD === startDate.date())) {
-          return true;
-        }
-
-        if (_.includes(ev.description, FLAG)) {
-          let eventName = ev.summary;
-
-          let timeStr = startDate.format('kk:mm') + ' - ' + endDate.format('kk:mm');
-          if (timeStr === "24:00 - 24:00") {
-            timeStr = '終日';
-          }
-
-          let eventField = {
-            title: "Event",
-            value: eventName,
-            short: false
-          };
-          fields.push(eventField);
-
-          let timeField = {
-            title: "Time",
-            value: timeStr,
-            short: true
-          };
-          fields.push(timeField);
-
-          let loc = ev.location;
-          if (loc === "") {
-            loc = 'NONE';
-          }
-
-          let locField = {
-            title: "Location",
-            value: loc,
-            short: true
-          };
-          fields.push(locField);
-
-          if (_.includes(ev.description, FLAG2)) {
-            let data = _.filter(scheduleData, (item) => {
-              return today - moment(item.day) >= 0;
-            });
-
-            let detail = _.reduce(data, (sum, n) => {
-              return sum + "@" + n.name + " ";
-            }, "");
-
-            let detailField = {
-              title: "Detail",
-              value: detail,
-              short: false
-            };
-
-            fields.push(detailField);
-          }
-
-          let detail = _.split(_.split(ev.description, FLAG + "{")[1], "}")[0];
-          if (!(_.isUndefined(detail) || detail === "")) {
-            let detailField = {
-              title: "Detail",
-              value: detail,
-              short: false
-            };
-
-            fields.push(detailField);
-          }
-        }
-      });
-
-      resolve(fields);
+      resolve(allData);
     });
   });
 };
 
+let filterCalData = (calendarData, searchDay) => {
+  return _.filter(calendarData, (data) => (searchDay.month() === moment(data.start).month() && searchDay.date() === moment(data.start).date()));
+};
+
+let filterRemindData = (calendarData) => {
+  return _.filter(calendarData, (data) => _.includes(data.description, FLAG));
+};
+
+
+let generateFields = async (offSetDay) => {
+  let searchDay = moment().utcOffset(9).add(offSetDay, 'd');
+  let allDataList = await getICALData();
+  let thatDayDataList = filterCalData(allDataList, searchDay);
+  let remindDataList = filterRemindData(thatDayDataList);
+  let fields = [];
+
+  _.forEach(remindDataList, (ev, k) => {
+    let eventName = ev.summary;
+
+    let timeStr = moment(ev.start).format('kk:mm') + ' - ' + moment(ev.end).format('kk:mm');
+    if (timeStr === "24:00 - 24:00") {
+      timeStr = '終日';
+    }
+
+    let eventField = {
+      title: "Event",
+      value: eventName,
+      short: false
+    };
+    fields.push(eventField);
+
+    let timeField = {
+      title: "Time",
+      value: timeStr,
+      short: true
+    };
+    fields.push(timeField);
+
+    let loc = ev.location;
+    if (loc === "") {
+      loc = 'NONE';
+    }
+
+    let locField = {
+      title: "Location",
+      value: loc,
+      short: true
+    };
+    fields.push(locField);
+
+    if (_.includes(ev.description, FLAG2)) {
+      let data = _.filter(scheduleData, (item) => {
+        return Math.abs(searchDay - moment(item.day)) <= 86400000; // 24 hours
+      });
+
+      let detail = _.reduce(data, (sum, n) => {
+        return sum + "@" + n.name + " ";
+      }, "");
+
+      let detailField = {
+        title: "Detail",
+        value: detail,
+        short: false
+      };
+
+      fields.push(detailField);
+    }
+
+    let detail = _.split(_.split(ev.description, FLAG + "{")[1], "}")[0];
+    if (!(_.isUndefined(detail) || detail === "")) {
+      let detailField = {
+        title: "Detail",
+        value: detail,
+        short: false
+      };
+
+      fields.push(detailField);
+    }
+  });
+
+  return fields;
+};
+
 module.exports = robot => {
-  robot.brain.once('save', () => {
-    robot.logger.debug("Reminder DB init");
-    monitorList = robot.brain.get('REMINDER_CHANNEL') || {};
-    scheduleData = robot.brain.get('SHEETSCHEDULE') || [];
-
-    new CronJob('0 0 17 * * *', () => {
-      robot.logger.debug("ReminderToSlack");
-      reminderToSlack();
-    }, null, true, TZ);
-  });
-
-  robot.hear(/^reminder$/, (res) => {
-    reminderToSlack();
-  });
-
-  robot.hear(/^checkreminder$/, (res) => {
-    console.log(robot.brain.get('REMINDER_CHANNEL'));
-  });
-
-  robot.hear(/^resetreminder$/, (res) => {
-    robot.brain.set('REMINDER_CHANNEL', {});
-  });
-
-  let reminderToSlack = async() => {
+  let reminderToSlack = async (offSetDay) => {
     try {
-      let fields = await createFields()
+      let fields = await generateFields(offSetDay)
       let att = {
         fallback: 'Next schedule',
         color: randomColor(),
@@ -186,6 +166,17 @@ module.exports = robot => {
     }
   };
 
+  robot.brain.once('save', () => {
+    robot.logger.debug("reminder.js");
+    monitorList = robot.brain.get('REMINDER_CHANNEL') || {};
+    scheduleData = robot.brain.get('SHEETSCHEDULE') || [];
+
+    new CronJob('0 0 17 * * *', () => {
+      robot.logger.debug("ReminderToSlack");
+      reminderToSlack(1);
+    }, null, true, TZ);
+  });
+
   robot.router.post('/slash/reminder/toggle', (req, res) => {
     if (req.body.token !== process.env.HUBOT_SLACK_TOKEN_VERIFY) {
       res.send("Verify Error");
@@ -209,5 +200,17 @@ module.exports = robot => {
     monitorList[payload.channel_id] = !old;
     robot.brain.set('REMINDER_CHANNEL', monitorList);
     res.send('Update reminder status in this channel: ' + !old);
+  });
+
+  robot.hear(/^reminder (\d+)$/, (res) => {
+    reminderToSlack(res.match[1]);
+  });
+
+  robot.hear(/^checkreminder$/, (res) => {
+    console.log(robot.brain.get('REMINDER_CHANNEL'));
+  });
+
+  robot.hear(/^resetreminder$/, (res) => {
+    robot.brain.set('REMINDER_CHANNEL', {});
   });
 };
