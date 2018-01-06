@@ -202,16 +202,15 @@ module.exports = robot => {
     res.send('Update reminder status in this channel: ' + !old);
   });
 
-  robot.respond(/^reminder (\d+)$/, (res) => {
+  robot.respond(/reminder (\d+)$/i, (res) => {
     reminderToSlack(res.match[1]);
   });
 
-  robot.respond(/^checkreminder$/, (res) => {
-    console.log(robot.brain.get('REMINDER_CHANNEL'));
+  robot.respond(/checkreminder$/i, (res) => {
     res.send(robot.brain.get('REMINDER_CHANNEL'));
   });
 
-  robot.respond(/^resetreminder$/, (res) => {
+  robot.respond(/resetreminder$/i, (res) => {
     robot.brain.set('REMINDER_CHANNEL', {});
     res.send("Reset REMINDER_CHANNEL");
   });
