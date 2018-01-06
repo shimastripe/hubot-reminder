@@ -207,11 +207,12 @@ module.exports = robot => {
   });
 
   robot.respond(/checkreminder$/i, (res) => {
-    res.send(robot.brain.get('REMINDER_CHANNEL'));
+    let obj = robot.brain.get('REMINDER_CHANNEL') || {};
+    res.reply("" + JSON.stringify(obj));
   });
 
   robot.respond(/resetreminder$/i, (res) => {
     robot.brain.set('REMINDER_CHANNEL', {});
-    res.send("Reset REMINDER_CHANNEL");
+    res.reply("Reset REMINDER_CHANNEL");
   });
 };
