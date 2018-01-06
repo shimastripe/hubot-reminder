@@ -212,6 +212,7 @@ module.exports = robot => {
   });
 
   robot.respond(/resetreminder$/i, (res) => {
+    monitorList = {}
     robot.brain.set('REMINDER_CHANNEL', {});
     res.reply("Reset REMINDER_CHANNEL");
   });
