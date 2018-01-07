@@ -16,59 +16,50 @@ const moment = require('moment');
 const ical = require('node-ical');
 const CronJob = require('cron').CronJob;
 const randomColor = require('randomcolor');
-const TZ = 'Asia/Tokyo';
 const FLAG = 'REMINDER';
 const FLAG2 = 'SPREADSHEET';
 
-let monitorList = {};
-let scheduleData = [];
+const google = require('googleapis');
+const OAuth2 = google.auth.OAuth2;
 
-let getICALData = () => {
+let oauth2Client = new OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET, [process.env.GOOGLE_REDIRECT_URN, process.env.GOOGLE_REDIRECT_URL]
+);
+
+oauth2Client.setCredentials({
+  access_token: process.env.GOOGLE_CALENDAR_ACCESS_TOKEN,
+  refresh_token: process.env.GOOGLE_CALENDAR_REFRESH_TOKEN
+});
+
+const getEventList = (auth, offset) => {
   return new Promise((resolve, reject) => {
-    ical.fromURL(process.env.ICAL_URL, {}, (err, data) => {
+    let calendar = google.calendar('v3');
+    let timeMin = moment().utcOffset(9).hour(0).minute(0).second(0).millisecond(0).add(offset, 'd');
+
+    calendar.events.list({
+      auth: auth,
+      calendarId: process.env.CALENDAR_ID,
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMin.add(1, 'd').toISOString(),
+      maxResults: 10,
+      singleEvents: true,
+      orderBy: 'startTime'
+    }, function (err, response) {
       if (err) {
-        reject(err);
-        return;
+        return reject(err);
       }
-
-      let allData = _.flatMap(data, (n) => {
-        if (n.rrule) {
-          let startDate = moment(n.start);
-          let endDate = moment(n.end);
-          let interval = endDate - startDate;
-
-          return _.map(n.rrule.all(), (m) => {
-            return {
-              summary: n.summary,
-              description: n.description,
-              location: n.location,
-              start: moment(m).toDate(),
-              end: moment(m).add(interval).toDate()
-            };
-          });
-        } else {
-          return n;
-        }
-      });
-      resolve(allData);
+      resolve(response.items);
     });
   });
 };
 
-let filterCalData = (calendarData, searchDay) => {
-  return _.filter(calendarData, (data) => (searchDay.month() === moment(data.start).month() && searchDay.date() === moment(data.start).date()));
-};
-
-let filterRemindData = (calendarData) => {
-  return _.filter(calendarData, (data) => _.includes(data.description, FLAG));
-};
-
+let monitorList = {};
+let scheduleData = [];
 
 let generateFields = async (offSetDay) => {
-  let searchDay = moment().utcOffset(9).add(offSetDay, 'd');
-  let allDataList = await getICALData();
-  let thatDayDataList = filterCalData(allDataList, searchDay);
-  let remindDataList = filterRemindData(thatDayDataList);
+  let events = await getEventList(oauth2Client, offSetDay);
+  let remindDataList = _.filter(events, (data) => _.includes(data.description, FLAG));
   let fields = [];
 
   _.forEach(remindDataList, (ev, k) => {
@@ -174,7 +165,7 @@ module.exports = robot => {
     new CronJob('0 0 17 * * *', () => {
       robot.logger.debug("ReminderToSlack");
       reminderToSlack(1);
-    }, null, true, TZ);
+    }, null, true, 'Asia/Tokyo');
   });
 
   robot.router.post('/slash/reminder/toggle', (req, res) => {
