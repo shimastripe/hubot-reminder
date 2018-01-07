@@ -64,10 +64,9 @@ let generateFields = async (offSetDay) => {
 
   _.forEach(remindDataList, (ev, k) => {
     let eventName = ev.summary;
-
-    let timeStr = moment(ev.start).format('kk:mm') + ' - ' + moment(ev.end).format('kk:mm');
-    if (timeStr === "24:00 - 24:00") {
-      timeStr = '終日';
+    let timeStr = 'All day';
+    if (moment(ev.start).isValid()) {
+      timeStr = moment(ev.start.dateTime).format('kk:mm') + ' - ' + moment(ev.end.dateTime).format('kk:mm');
     }
 
     let eventField = {
