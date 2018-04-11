@@ -97,7 +97,7 @@ let generateFields = async (offSetDay) => {
 
     if (_.includes(ev.description, FLAG2)) {
       let data = _.filter(scheduleData, (item) => {
-        return Math.abs(searchDay - moment(item.day)) <= 86400000; // 24 hours
+        return Math.abs(offSetDay - moment(item.day)) <= 86400000; // 24 hours
       });
 
       let detail = _.reduce(data, (sum, n) => {
