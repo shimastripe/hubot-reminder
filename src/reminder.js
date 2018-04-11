@@ -58,6 +58,7 @@ let monitorList = {};
 let scheduleData = [];
 
 let generateFields = async (offSetDay) => {
+  let searchDay = moment().utcOffset(9).add(offSetDay, 'd');
   let events = await getEventList(oauth2Client, offSetDay);
   let remindDataList = _.filter(events, (data) => _.includes(data.description, FLAG));
   let fields = [];
@@ -97,7 +98,7 @@ let generateFields = async (offSetDay) => {
 
     if (_.includes(ev.description, FLAG2)) {
       let data = _.filter(scheduleData, (item) => {
-        return Math.abs(offSetDay - moment(item.day)) <= 86400000; // 24 hours
+        return Math.abs(searchDay - moment(item.day)) <= 86400000; // 24 hours
       });
 
       let detail = _.reduce(data, (sum, n) => {
